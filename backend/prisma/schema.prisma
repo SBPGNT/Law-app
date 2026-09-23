@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  idCard         String?         @unique
+  firstName      String
+  lastName       String
+  email          String          @unique
+  password       String
+  phone          String?
+  dateOfBirth    DateTime?
+  role           String          @default("USER") // USER, LAWYER, ADMIN
+  posts          Post[]
+  comments       Comment[]
+  favorites      Favorite[]
+  lawyerRequests LawyerRequest[]
+  messages       Message[]
+  createdAt      DateTime        @default(now())
+}
+
+model Post {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  isAnonymous Boolean   @default(false)
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+  comments    Comment[]
+  createdAt   DateTime  @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  parentId  String?
+  createdAt DateTime @default(now())
+}
+
+model Ebook {
+  id          String     @id @default(uuid())
+  title       String
+  category    String?
+  description String?
+  coverUrl    String?
+  pdfUrl      String?
+  authorName  String?
+  publisher   String?
+  favorites   Favorite[]
+  createdAt   DateTime   @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  ebookId   String
+  ebook     Ebook    @relation(fields: [ebookId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, ebookId])
+}
+
+model LawyerRequest {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  subject   String?
+  events    String?
+  message   String?
+  status    String    @default("AWAITING_REVIEW")
+  messages  Message[]
+  createdAt DateTime  @default(now())
+}
+
+model Message {
+  id        String        @id @default(uuid())
+  requestId String
+  request   LawyerRequest @relation(fields: [requestId], references: [id])
+  senderId  String
+  sender    User          @relation(fields: [senderId], references: [id])
+  text      String
+  createdAt DateTime      @default(now())
+  avatarUrl String?
+}
