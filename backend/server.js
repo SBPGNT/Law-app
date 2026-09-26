@@ -36,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/ebooks', ebookRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/uploads', express.static('uploads'));
 
 // เรียกใช้ Socket Handler
 const setupChatSocket = require('./socket/chatHandler');

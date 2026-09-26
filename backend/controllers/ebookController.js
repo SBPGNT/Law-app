@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 
+// 1. ดึงรายการหนังสือทั้งหมด (พร้อมระบบค้นหา)
 exports.getEbooks = async (req, res) => {
   try {
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
@@ -19,17 +20,47 @@ exports.getEbooks = async (req, res) => {
   }
 };
 
-exports.getEbookDetail = async (req, res) => {
+// 2. ดึงรายการหมวดหมู่หนังสือ
+exports.getCategories = async (req, res) => {
   try {
-    const { id } = req.params;
-    const ebook = await prisma.ebook.findUnique({ where: { id: parseInt(id) } });
-    if (ebook) res.json(ebook);
-    else res.status(404).json({ error: 'Ebook not found' });
+    if (prisma.category) {
+      const categories = await prisma.category.findMany();
+      return res.json(categories);
+    }
+    const ebooks = await prisma.ebook.findMany({
+      select: { category: true },
+      distinct: ['category'],
+    });
+    const categories = ebooks.map(b => b.category).filter(Boolean);
+    res.json(categories);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
+// 3. ดึงรายละเอียดหนังสือรายเล่ม
+// 3. ดึงรายละเอียดหนังสือรายเล่ม
+exports.getEbookDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const ebook = await prisma.ebook.findUnique({
+      where: {
+        id: id // 🟢 ใช้ id เป็น String ตรงๆ ตามประเภทข้อมูลใน Prisma Schema
+      }
+    });
+
+    if (!ebook) {
+      return res.status(404).json({ message: 'ไม่พบหนังสือเล่มนี้' });
+    }
+
+    res.json(ebook);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 4. ดึงรายการหนังสือเล่มโปรดของผู้ใช้
 exports.getFavorites = async (req, res) => {
   try {
     const favorites = await prisma.favorite.findMany({
@@ -42,6 +73,7 @@ exports.getFavorites = async (req, res) => {
   }
 };
 
+// 5. เพิ่ม/ลบ หนังสือเล่มโปรด
 exports.toggleFavorite = async (req, res) => {
   try {
     const { ebookId } = req.params;
@@ -60,5 +92,37 @@ exports.toggleFavorite = async (req, res) => {
     }
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+exports.createEbook = async (req, res) => {
+  try {
+    // 🟢 เปลี่ยนจากรับค่า category เป็น categoryId
+    const { title, authorName, author, categoryId, description, price, isFree } = req.body;
+
+    const coverFile = req.files && req.files['cover'] ? req.files['cover'][0] : null;
+    const pdfFile = req.files && req.files['pdf'] ? req.files['pdf'][0] : null;
+
+    const coverUrl = coverFile ? `/uploads/ebooks/covers/${coverFile.filename}` : '';
+    const fileUrl = pdfFile ? `/uploads/ebooks/pdfs/${pdfFile.filename}` : '';
+
+    const newEbook = await prisma.ebook.create({
+      data: {
+        title,
+        author: authorName || author || '',
+        // 🟢 ส่งค่าเป็น categoryId (ตัวเลข) ให้ตรงกับ Foreign Key ใน Schema
+        categoryId: categoryId ? parseInt(categoryId) : undefined,
+        description: description || '',
+        coverUrl,
+        fileUrl,
+        price: price ? parseFloat(price) : 0,
+        isFree: isFree === 'true' || isFree === true,
+      }
+    });
+
+    res.status(201).json(newEbook);
+  } catch (error) {
+    console.error('Create Ebook Error:', error);
+    res.status(500).json({ error: error.message });
   }
 };
