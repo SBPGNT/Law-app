@@ -5,13 +5,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EbookDetailScreen({ navigation, route }) {
   const [isFavorite, setIsFavorite] = useState(false);
-  const book = route?.params?.book || {
+  const book = route?.params?.book || route?.params?.ebook || {
     title: 'กฎหมายอาญา ภาคทั่วไป',
     desc: 'หนังสือกฎหมายภาคทั่วไปสำหรับบุคคลทั่วไป คือหลักเกณฑ์พื้นฐานที่ใช้กับความผิดทุกประเภทในประมวลกฎหมายอาญา ตั้งแต่มาตรา 1 ถึงมาตรา 106',
     image: 'https://via.placeholder.com/200x280.png?text=Book+Cover',
     author: 'นายกฤษพล โอวูเวเวเว เอนเยทูเอนเวเว',
     publisher: 'นายกฤษพล โอวูเวเวเว เอนเยทูเอนเวเว',
     date: '67/67/6767'
+  };
+
+  const handleReadNow = () => {
+    navigation.navigate('PdfViewer', { ebook: book });
   };
 
   return (
@@ -50,10 +54,9 @@ export default function EbookDetailScreen({ navigation, route }) {
           <Text style={styles.detailText}><Text style={styles.boldText}>วันที่เผยแพร่ : </Text>{book.date}</Text>
         </View>
 
-        {/* Download Button */}
-        <TouchableOpacity style={styles.downloadButton}>
-          <Text style={styles.downloadButtonText}>Download PDF</Text>
-          <Feather name="download" size={20} color="#fff" style={{ marginLeft: 10 }} />
+        <TouchableOpacity style={styles.downloadButton} onPress={handleReadNow}>
+          <Text style={styles.downloadButtonText}>เปิดอ่านทันที</Text>
+          <Feather name="book-open" size={20} color="#fff" style={{ marginLeft: 10 }} />
         </TouchableOpacity>
 
       </ScrollView>
@@ -153,4 +156,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

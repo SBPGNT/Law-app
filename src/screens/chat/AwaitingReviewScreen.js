@@ -1,11 +1,36 @@
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AwaitingReviewScreen({ navigation, route }) {
   const { consultId } = route.params || {};
   const [isReady, setIsReady] = useState(false);
+
+  const openChat = async () => {
+    try {
+      if (!consultId) {
+        Alert.alert('เปิดแชตไม่สำเร็จ', 'ไม่พบหมายเลขคำขอปรึกษา');
+        return;
+      }
+
+      const storedUser = await AsyncStorage.getItem('userData');
+      const currentUserId = storedUser ? JSON.parse(storedUser)?.id : null;
+      if (currentUserId == null) {
+        Alert.alert('เปิดแชตไม่สำเร็จ', 'ไม่พบข้อมูลผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่');
+        return;
+      }
+
+      navigation.navigate('ConsultChat', {
+        consultationId: consultId,
+        currentUserId,
+      });
+    } catch (error) {
+      console.error('Open consultation chat error:', error);
+      Alert.alert('เปิดแชตไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
+    }
+  };
 
   // Simulate server review process for 3 seconds
   useEffect(() => {
@@ -41,7 +66,7 @@ export default function AwaitingReviewScreen({ navigation, route }) {
             </View>
             <TouchableOpacity 
               style={styles.readyButton} 
-              onPress={() => navigation.navigate('ChatBox', { consultId })}
+              onPress={openChat}
             >
               <FontAwesome5 name="comment-dots" size={20} color="#fff" style={{ marginRight: 10 }} />
               <Text style={styles.readyButtonText}>Ready to Chat</Text>

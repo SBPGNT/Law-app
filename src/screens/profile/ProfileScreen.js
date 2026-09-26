@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -14,6 +14,7 @@ import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../../services/apiClient';
+import { AuthContext } from '../../AuthContext';
 
 // 📍 ฟังก์ชันสำหรับแปลง Path รูปภาพจาก Backend ให้เป็น URL เต็ม
 const getFullImageUrl = (path) => {
@@ -25,6 +26,7 @@ const getFullImageUrl = (path) => {
 };
 
 export default function ProfileScreen({ navigation }) {
+  const { logout } = useContext(AuthContext);
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -137,11 +139,13 @@ export default function ProfileScreen({ navigation }) {
         text: 'ออกจากระบบ',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.clear();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+          try {
+            await logout();
+            await AsyncStorage.removeItem('userAvatar');
+          } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert('ออกจากระบบไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
+          }
         },
       },
     ]);

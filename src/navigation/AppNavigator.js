@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import ChatNavigator from './ChatNavigator';
 import CommunityNavigator from './CommunityNavigator';
 import EbookNavigator from './EbookNavigator';
+import PdfViewerScreen from '../screens/ebook/PdfViewerScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -45,6 +46,14 @@ export default function AppNavigator() {
     >
       <Tab.Screen name="Community" component={CommunityNavigator} />
       <Tab.Screen name="E-Book" component={EbookNavigator} />
+      <Tab.Screen
+        name="PdfViewer"
+        component={PdfViewerScreen}
+        options={{
+          tabBarButton: () => null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tab.Screen name="Chat" component={ChatNavigator} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
