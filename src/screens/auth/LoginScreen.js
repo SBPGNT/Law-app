@@ -7,7 +7,6 @@ import {
   TextInput, 
   TouchableOpacity, 
   View, 
-  Alert, 
   ActivityIndicator 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,14 +18,16 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('แจ้งเตือน', 'กรุณากรอก Email และ Password ให้ครบถ้วน');
+      setErrorMessage('กรุณากรอก Email และ Password ให้ครบถ้วน');
       return;
     }
 
     setLoading(true);
+    setErrorMessage('');
     try {
       const response = await apiClient.post('/auth/login', {
         email: email.trim(),
@@ -34,19 +35,14 @@ export default function LoginScreen({ navigation }) {
       });
 
       const { token, user } = response.data;
-
-      Alert.alert('สำเร็จ', 'เข้าสู่ระบบเรียบร้อยแล้ว', [
-        {
-          text: 'ตกลง',
-          onPress: () => {
-            login(token, user); // 3. เรียกใช้ฟังก์ชันสลับหน้าแอปทันทีเมื่อกดตกลง
-          },
-        },
-      ]);
+      await login(token, user);
     } catch (error) {
       console.error('Login Error:', error.response?.data || error.message);
-      const message = error.response?.data?.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-      Alert.alert('เข้าสู่ระบบไม่สำเร็จ', message);
+      const message = error.response?.data?.message
+        || (error.request
+          ? 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อและ URL ของ API'
+          : 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -89,6 +85,12 @@ export default function LoginScreen({ navigation }) {
             />
           </View>
 
+          {errorMessage ? (
+            <Text style={styles.errorText} accessibilityRole="alert">
+              {errorMessage}
+            </Text>
+          ) : null}
+
           <TouchableOpacity 
             style={styles.loginButton} 
             onPress={handleLogin}
@@ -123,7 +125,7 @@ export default function LoginScreen({ navigation }) {
           {/* Navigate to Sign Up */}
           <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.signupLinkContainer}>
             <Text style={styles.signupText}>
-              Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+              Don&apos;t have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -153,6 +155,7 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, height: '100%', color: '#333' },
+  errorText: { color: '#c62828', marginBottom: 8 },
   loginButton: {
     backgroundColor: '#1E2B58',
     borderRadius: 25,
